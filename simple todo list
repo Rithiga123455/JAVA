@@ -1,0 +1,145 @@
+import java.io.*;
+import java.util.*;
+
+class Task {
+    private String title;
+    private boolean completed;
+
+    public Task(String title) {
+        this.title = title;
+        this.completed = false;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public boolean isCompleted() {
+        return completed;
+    }
+
+    public void markAsCompleted() {
+        this.completed = true;
+    }
+
+    @Override
+    public String toString() {
+        return (completed ? "[Done] " : "[Pending] ") + title;
+    }
+}
+
+class TaskManager {
+    private List<Task> tasks;
+    private static final String FILE_NAME = "tasks.txt";
+
+    public TaskManager() {
+        tasks = new ArrayList<>();
+        loadTasks();
+    }
+
+    public void addTask(String title) {
+        tasks.add(new Task(title));
+        saveTasks();
+    }
+
+    public void removeTask(String title) {
+        tasks.removeIf(task -> task.getTitle().equalsIgnoreCase(title));
+        saveTasks();
+    }
+
+    public void markTaskAsCompleted(String title) {
+        for (Task task : tasks) {
+            if (task.getTitle().equalsIgnoreCase(title)) {
+                task.markAsCompleted();
+                saveTasks();
+                return;
+            }
+        }
+        System.out.println("Task not found.");
+    }
+
+    public void listTasks() {
+        if (tasks.isEmpty()) {
+            System.out.println("No tasks found.");
+        } else {
+            for (Task task : tasks) {
+                System.out.println(task);
+            }
+        }
+    }
+
+    private void saveTasks() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME))) {
+            for (Task task : tasks) {
+                writer.write(task.getTitle() + "," + (task.isCompleted() ? "completed" : "pending"));
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            System.out.println("Error saving tasks: " + e.getMessage());
+        }
+    }
+
+    private void loadTasks() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_NAME))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length == 2) {
+                    Task task = new Task(parts[0]);
+                    if (parts[1].equals("completed")) {
+                        task.markAsCompleted();
+                    }
+                    tasks.add(task);
+                }
+            }
+        } catch (IOException e) {
+            // File might not exist initially
+        }
+    }
+}
+
+public class TodoListApp {
+    private static final Scanner scanner = new Scanner(System.in);
+    private static final TaskManager taskManager = new TaskManager();
+
+    public static void main(String[] args) {
+        while (true) {
+            System.out.println("\nTo-Do List Application");
+            System.out.println("1. Add Task");
+            System.out.println("2. Remove Task");
+            System.out.println("3. Mark Task as Completed");
+            System.out.println("4. List Tasks");
+            System.out.println("5. Exit");
+            System.out.print("Choose an option: ");
+
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter task title: ");
+                    String addTitle = scanner.nextLine();
+                    taskManager.addTask(addTitle);
+                    break;
+                case 2:
+                    System.out.print("Enter task title to remove: ");
+                    String removeTitle = scanner.nextLine();
+                    taskManager.removeTask(removeTitle);
+                    break;
+                case 3:
+                    System.out.print("Enter task title to mark as completed: ");
+                    String completeTitle = scanner.nextLine();
+                    taskManager.markTaskAsCompleted(completeTitle);
+                    break;
+                case 4:
+                    taskManager.listTasks();
+                    break;
+                case 5:
+                    System.out.println("Exiting...");
+                    return;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        }
+    }
+}
